@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dopamine Quest — Sci‑Fi Habits & Timers (PWA)</title>
+<meta name="theme-color" content="#0ff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cdefs/%3E%3Crect width='256' height='256' rx='56' fill='%230a0f28'/%3E%3Cg transform='translate(128,128)'%3E%3Ccircle r='64' fill='%2300fff0' opacity='.2'/%3E%3Ccircle r='40' fill='%238a7cff' opacity='.35'/%3E%3Ccircle r='16' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E"/>
+<style>
+  :root{
+    --bg:#070a1a;            /* deep space */
+    --bg-2:#0b1030;          /* darker panels */
+    --ink:#e7f7ff;
+    --muted:#9edcff;
+    --glow:#00fff0;          /* neon cyan */
+    --glow-2:#8a7cff;        /* neon violet */
+    --warn:#ff6b88;
+    --ok:#7aff8a;
+    --gold:#ffd166;
+    --card: linear-gradient(180deg,#0e1540,#0b1030);
+    --glass: rgba(255,255,255,.06);
+    --bd: rgba(255,255,255,.12);
+    --radius: 18px;
+    --shadow: 0 12px 40px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    background:
+      radial-gradient(900px 500px at 85% -10%, #1c1b6d88 0%, transparent 60%),
+      radial-gradient(1000px 600px at -10% 10%, #0b8bb4aa 0%, transparent 55%),
+      linear-gradient(180deg,#050812,#0a0f28);
+  }
+  header{
+    position:sticky; top:0; z-index:30;
+    background:linear-gradient(180deg,rgba(5,8,18,.85),rgba(5,8,18,.55));
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #1f2f66;
+  }
+  .hud{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px;
+  }
+  .brand{display:flex; align-items:center; gap:12px}
+  .glyph{
+    width:46px; height:46px; border-radius:12px; position:relative; overflow:hidden;
+    background: conic-gradient(from 0deg, var(--glow), var(--glow-2), var(--glow));
+    box-shadow: 0 0 30px #00fff044, inset 0 0 24px #ffffff22;
+  }
+  .glyph::after{content:""; position:absolute; inset:3px; border-radius:10px; background: radial-gradient(180px 80px at 60% -10%, rgba(255,255,255,.25), transparent 60%)}
+  h1{margin:0; font-size:22px; letter-spacing:.3px}
+  .muted{color:var(--muted); opacity:.9; font-size:12px}
+
+  .pill{
+    display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+    border-radius:999px; border:1px solid #2a3a88;
+    background:linear-gradient(180deg,#0b1340,#0a0f2e);
+    box-shadow: var(--shadow), 0 0 20px #00fff01a inset;
+    text-shadow: 0 0 10px #00fff055;
+    white-space:nowrap;
+  }
+  .pill .big{font-weight:900}
+  .stack{display:flex; flex-wrap:wrap; gap:8px}
+
+  nav.tabs{display:flex; gap:8px; padding:0 12px 12px}
+  .tab{
+    background:linear-gradient(180deg,#0f1955,#0b123f);
+    border:1px solid #2b3a88; color:var(--ink);
+    padding:10px 12px; border-radius:12px; font-weight:900; cursor:pointer;
+    box-shadow:0 8px 22px rgba(0,0,0,.35);
+    letter-spacing:.3px;
+  }
+  .tab.active{ outline: 2px solid #00fff055; text-shadow:0 0 12px #00fff0aa }
+
+  .wrap{ max-width:1200px; margin:0 auto; padding:16px; }
+  .grid{ display:grid; grid-template-columns:1.35fr 1fr; gap:16px }
+  @media (max-width:1100px){ .grid{ grid-template-columns:1fr } }
+
+  .card{ background:var(--card); border-radius:var(--radius); padding:16px;
+         border:1px solid #20306a; box-shadow:var(--shadow) }
+  .card h2{ margin:0 0 10px; font-size:16px; letter-spacing:.3px }
+
+  .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .right{ margin-left:auto }
+
+  /* Buttons */
+  .btn{
+    background: linear-gradient(180deg,#12206d,#0c184f);
+    color:var(--ink); border:1px solid #2b3a88;
+    padding:10px 12px; border-radius:12px; cursor:pointer;
+    font-weight:900; letter-spacing:.3px;
+    transition:.2s transform, .2s box-shadow, .2s opacity;
+    box-shadow: 0 10px 25px rgba(0,0,0,.35), 0 0 0 0 #00fff000;
+  }
+  .btn:hover{ transform: translateY(-1px) scale(1.01); box-shadow:0 12px 30px rgba(0,0,0,.4), 0 0 18px #00fff033 }
+  .btn:active{ transform: translateY(0) scale(.99) }
+  .btn.small{ padding:6px 8px; border-radius:10px; font-size:12px }
+  .btn.positive{ background: linear-gradient(180deg,#0e6b6b,#0a4848); border-color:#0ad6d6 }
+  .btn.warn{ background: linear-gradient(180deg,#6b0e2a,#480a1d); border-color:#ff5e8a }
+  .btn.success{ background: linear-gradient(180deg,#0e6b2b,#0a4820); border-color:#2cff97 }
+  .btn.ghost{ background:transparent; border-color:#2b3a88; opacity:.85 }
+
+  /* Inputs */
+  input,select{
+    background: rgba(255,255,255,.06); color:var(--ink);
+    border:1px solid #2b3a88; border-radius:12px; padding:10px; outline:none;
+  }
+  input::placeholder{ color:#cfe9ff80 }
+  label{ display:flex; align-items:center; gap:8px }
+
+  /* Habits */
+  .habits{ display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px }
+  .habit{ position:relative; padding:14px; border-radius:16px; background:linear-gradient(180deg,#0a123d,#0a0f2c); border:1px solid #2a3a88 }
+  .habit[draggable="true"]{ cursor:grab }
+  .habit.dragging{ opacity:.6; outline:1px dashed #00fff099 }
+  .habit .top{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+  .habit .name{ font-weight:900; letter-spacing:.3px }
+  .habit .meta{ font-size:12px; color:var(--muted) }
+  .checkbox{ appearance:none; width:28px; height:28px; border-radius:8px; border:2px solid #3650c2; display:inline-grid; place-items:center; cursor:pointer }
+  .checkbox:checked{ background:linear-gradient(145deg,#00fff0,#8a7cff); border-color:transparent; box-shadow:0 0 18px #00fff099, inset 0 0 16px #ffffff22 }
+
+  /* Heat strips */
+  .heat{ display:grid; grid-template-columns:repeat(30,10px); gap:4px; margin-top:8px }
+  .heat div{ width:10px; height:10px; border-radius:2px; background:#151a46; border:1px solid #27306d }
+  .heat div.on{ background: linear-gradient(180deg,#00ffe0,#0ec9aa) }
+
+  /* Weekly global heat */
+  .dot{ width:18px; height:18px; border-radius:50%; border:1px solid #2b3a88; background:#0b1033; display:grid; place-items:center; font-size:11px; color:#8db7ff }
+  .dot.done{ background: radial-gradient(circle at 40% 30%, #00fff0, #0096a8); color:#001b1f; text-shadow:0 0 8px #00fff0cc; border-color:#00deff }
+
+  /* Timers */
+  .list{ display:grid; gap:8px }
+  .item{ display:flex; gap:12px; align-items:center; justify-content:space-between; padding:12px; border:1px solid #26347a; background:linear-gradient(180deg,#12183f,#0e1432); border-radius:14px; box-shadow: inset 0 0 22px #ffffff0a }
+  .clock{ font-variant-numeric:tabular-nums; font-weight:900; background:#0a0f2c; padding:8px 10px; border-radius:10px; border:1px solid #27306d; min-width:88px; text-align:center; text-shadow:0 0 10px #00fff055 }
+  .status{ font-size:12px; color:#9edcff }
+
+  /* XP bar (bigger) */
+  .xpbar{ height:18px; border-radius:999px; background:#0b1030; border:1px solid #20306a; overflow:hidden; position:relative }
+  .xpbar .fill{ height:100%; width:0; background: linear-gradient(90deg,#00fff0,#8a7cff); box-shadow: 0 0 16px #00fff088 }
+  .xpbar .label{ position:absolute; inset:0; display:grid; place-items:center; font-size:11px; color:#cfe9ffcc }
+
+  /* Toast */
+  .toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; background:#0b113a; border:1px solid #2b3a88; color:var(--ink); padding:10px 14px; border-radius:999px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:.25s; z-index:60}
+  .toast.show{ opacity:1; bottom:26px }
+
+  /* Modal */
+  .modal{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:16px; z-index:80 }
+  .modal .box{ max-width:560px; width:100%; background:linear-gradient(180deg,#0d1442,#0a1033); border:1px solid #2b3a88; border-radius:18px; padding:16px; box-shadow:0 30px 70px rgba(0,0,0,.55) }
+
+  /* Confetti canvas */
+  #confetti{ position:fixed; inset:0; pointer-events:none; z-index:50 }
+
+  /* Settings grid tweaks */
+  .settingsGrid{ display:grid; gap:8px }
+</style>
+</head>
+<body>
+  <!-- Inline sounds (short, browser-friendly) -->
+  <audio id="soundDing" preload="auto" src="data:audio/wav;base64,UklGRkIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABZkAAAAbm9pc2UAAAAAAABkYXRhAAAAAP//AACAgICAf39/f4CAgID//wAA"></audio>
+  <audio id="soundBeep" preload="auto" src="data:audio/wav;base64,UklGRkIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABZkAAAAYmVlcAAA/////wD///8AAP///wD///8AAP///wBkYXRhAAAAAP//AACAgICAf39/f4CAgID//wAA"></audio>
+
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <header>
+    <div class="hud" role="banner">
+      <div class="brand" aria-label="App brand">
+        <div class="glyph" aria-hidden="true"></div>
+        <div>
+          <h1>Dopamine Quest</h1>
+          <div class="muted">Futuristic, offline, single-file ⚡</div>
+        </div>
+      </div>
+      <div class="stack" role="status" aria-live="polite">
+        <div class="pill" title="Total XP" aria-label="Total XP"><span>⭐</span><span class="muted">XP</span><span class="big" id="xpTotal">0</span></div>
+        <div class="pill" title="Level" aria-label="Level"><span>🧠</span><span class="muted">LVL</span><span class="big" id="level">1</span></div>
+        <div class="pill" title="Best Streak" aria-label="Best Streak"><span>🔥</span><span class="muted">Best</span><span class="big" id="bestStreak">0</span></div>
+        <div class="pill" title="Credits" aria-label="Credits"><span>💠</span><span class="muted">Credits</span><span class="big" id="credits">0</span></div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Main tabs">
+      <button class="tab active" role="tab" aria-selected="true" data-tab="habits">Quests</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="timers">Missions</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="stats">Stats</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="settings">Settings</button>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <!-- QUESTS -->
+    <section data-page="habits" aria-label="Quests">
+      <div class="grid">
+        <section class="card" aria-labelledby="daily-log-title">
+          <h2 id="daily-log-title">Daily Quest Log</h2>
+          <div id="habitList" class="habits" aria-live="polite"></div>
+          <div class="row" style="margin-top:10px; gap:10px">
+            <input id="newHabitName" placeholder="Add a habit (e.g., Make bed)" aria-label="New habit name" style="flex:1;min-width:220px"/>
+            <input id="newHabitEmoji" placeholder="Emoji (e.g., 🛏️)" aria-label="New habit emoji" maxlength="4" style="width:110px"/>
+            <select id="newHabitColor" title="Card color" aria-label="New habit color" style="width:130px">
+              <option value="#00fff0" selected>Neon Cyan</option>
+              <option value="#8a7cff">Neon Violet</option>
+              <option value="#7aff8a">Neon Green</option>
+              <option value="#ffd166">Gold</option>
+              <option value="#ff6b88">Rose</option>
+            </select>
+            <button class="btn" id="addHabitBtn" aria-label="Add habit">+ Add</button>
+            <button class="btn small" id="perfectDayBtn" title="Complete all unchecked today" aria-label="Mark all today">Perfect Day</button>
+            <button class="btn small ghost" id="freezeBtn" title="Spend credits to freeze yesterday" aria-label="Streak Freeze">🧊 Freeze</button>
+            <span class="muted right" id="todayLabel" aria-live="polite"></span>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="console-title">
+          <h2 id="console-title">Command Console</h2>
+          <div class="row" aria-label="Weekday legend">
+            <div class="dot" title="Mon">M</div><div class="dot" title="Tue">T</div><div class="dot" title="Wed">W</div><div class="dot" title="Thu">T</div><div class="dot" title="Fri">F</div><div class="dot" title="Sat">S</div><div class="dot" title="Sun">S</div>
+          </div>
+          <div id="weeklyHeatmap" class="row" style="margin-top:8px" aria-label="Weekly completion heat"></div>
+
+          <h2 style="margin-top:16px">Achievements</h2>
+          <div class="row" id="badges" aria-live="polite"></div>
+
+          <h2 style="margin-top:16px">Energy Bar</h2>
+          <div class="xpbar" aria-label="XP progress to next level">
+            <div id="xpFill" class="fill"></div>
+            <div id="xpLabel" class="label">0 / 150</div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- MISSIONS -->
+    <section class="card" data-page="timers" style="display:none" aria-label="Missions">
+      <h2>Mission Control — Focus Timers</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input id="taskName" placeholder="Mission name (e.g., Prepare for course)" aria-label="Mission name" style="flex:1;min-width:240px"/>
+        <input id="taskMinutes" type="number" min="1" value="30" aria-label="Minutes" style="width:120px"/>
+        <button class="btn success" id="addTaskBtn" aria-label="Launch mission">Launch</button>
+      </div>
+      <div id="activeTimers" class="list" aria-live="polite"></div>
+      <div class="muted" id="activeTimersEmpty">No active missions. Launch one above.</div>
+      <h2 style="margin-top:14px">All Sessions</h2>
+      <div id="taskList" class="list"></div>
+      <div class="muted" id="taskListEmpty">No sessions yet.</div>
+    </section>
+
+    <!-- STATS -->
+    <section class="card" data-page="stats" style="display:none" aria-label="Stats">
+      <h2>Recent Activity</h2>
+      <div id="recentActivity" class="list"></div>
+      <div class="muted" id="recentEmpty">No activity yet.</div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="card" data-page="settings" style="display:none" aria-label="Settings">
+      <h2>Settings</h2>
+      <div class="settingsGrid">
+        <div class="item">
+          <div class="row"><div class="pill">🎵 SFX</div><div>Sound Effects</div></div>
+          <label class="row" for="soundToggle"><input type="checkbox" id="soundToggle" checked> <span id="soundState">On</span> <button class="btn small" id="testSoundBtn">Test</button></label>
+        </div>
+        <div class="item">
+          <div class="row"><div class="pill">🔔</div><div>Notifications (test)</div></div>
+          <div class="row"><button class="btn small" id="notifyBtn">Enable / Test</button></div>
+        </div>
+        <div class="item">
+          <div class="row"><div class="pill">💾</div><div>Backup</div></div>
+          <div class="row">
+            <button class="btn small" id="backupBtn">Export JSON</button>
+            <button class="btn small" id="restoreBtn">Import JSON</button>
+            <input type="file" id="restoreFile" style="display:none" accept="application/json" />
+          </div>
+        </div>
+        <div class="item">
+          <div class="row"><div class="pill">🧹</div><div>Reset Everything</div></div>
+          <button class="btn warn" id="resetBtn">Reset All</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Completion Modal -->
+  <div class="modal" id="completeModal" role="dialog" aria-modal="true" aria-labelledby="completeTitle">
+    <div class="box">
+      <h2 id="completeTitle">Mission Complete 🎉</h2>
+      <p id="completeMsg" class="muted">Great work!</p>
+      <div class="row" style="margin:8px 0 10px">
+        <label><input type="checkbox" id="markAsHabitChk"> Also mark as habit (streak)</label>
+      </div>
+      <div class="row" id="habitFields" style="display:none;gap:8px">
+        <input id="habitFromTask" placeholder="Habit name" style="flex:1;min-width:180px"/>
+        <input id="habitFromTaskXp" type="number" min="1" value="12" style="width:110px"/>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button class="btn" id="restartBtn">Restart</button>
+        <button class="btn success" id="confirmCompleteBtn">Confirm & Reward</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit/Delete Habit Modal -->
+  <div class="modal" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="box">
+      <h2 id="editTitle">Edit Habit</h2>
+      <div class="row" style="gap:8px">
+        <input id="editName" placeholder="Name" style="flex:1;min-width:180px"/>
+        <input id="editEmoji" placeholder="Emoji" maxlength="4" style="width:110px"/>
+        <input id="editXP" type="number" min="1" value="10" style="width:110px"/>
+        <select id="editColor" style="width:140px">
+          <option value="#00fff0">Neon Cyan</option>
+          <option value="#8a7cff">Neon Violet</option>
+          <option value="#7aff8a">Neon Green</option>
+          <option value="#ffd166">Gold</option>
+          <option value="#ff6b88">Rose</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label>Weekly Goal <input id="editGoal" type="number" min="1" max="7" value="5" style="width:90px"></label>
+      </div>
+      <div class="row" style="justify-content:space-between; margin-top:10px">
+        <button class="btn warn" id="deleteHabitBtn">Delete</button>
+        <div class="row" style="gap:8px">
+          <button class="btn" id="cancelEditBtn">Cancel</button>
+          <button class="btn success" id="saveHabitBtn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal (generic) -->
+  <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="box">
+      <h2 id="confirmTitle">Confirm</h2>
+      <p id="confirmText" class="muted">Are you sure?</p>
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button class="btn" id="confirmNo">Cancel</button>
+        <button class="btn success" id="confirmYes">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  const el = id => document.getElementById(id);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  // ---------- Tabs ----------
+  $$('.tab').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.tab)));
+  function goTab(key){
+    $$('.tab').forEach(b=>{ const on=b.dataset.tab===key; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+    $$('[data-page]').forEach(p=>p.style.display = (p.dataset.page===key)?'block':'none');
+  }
+
+  // ---------- Utilities ----------
+  const pad = n => String(n).padStart(2,'0');
+  const todayKey = ()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const dayAdd = (key,delta)=>{const [y,m,dd]=key.split('-').map(Number);const dt=new Date(y,m-1,dd);dt.setDate(dt.getDate()+delta);return ymd(dt)}
+  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+  const isEmoji = s => /\p{Extended_Pictographic}/u.test(s||'');
+  function fmtTime(ms){
+    ms=Math.max(0,Math.floor(ms/1000));
+    const h=Math.floor(ms/3600), m=Math.floor((ms%3600)/60), s=ms%60;
+    return h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`;
+  }
+  function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+
+  // ---------- Storage ----------
+  const KEY='dq_scifi_pwa_v2';
+  const defaults={
+    habits:[
+      {id:id(),name:'Make Bed',emoji:'🛏️',color:'#00fff0',createdAt:todayKey(),xp:10,goal:5,history:{},order:0},
+      {id:id(),name:'1hr Deep Work',emoji:'💻',color:'#8a7cff',createdAt:todayKey(),xp:12,goal:5,history:{},order:1},
+      {id:id(),name:'Meal 1',emoji:'🍳',color:'#ffd166',createdAt:todayKey(),xp:8,goal:5,history:{},order:2},
+    ],
+    xp:0, level:1, credits:0, xpLog:{}, badges:[], activity:[], totalChecks:0,
+    tasks:[], // {id,name,minutes,status,startedAt,elapsedMs,remainingMs,paused,_last}
+    settings:{ sound:true, lastBackup:null, freezes:1 },
+    version:2
+  };
+  function load(){ try{const raw=localStorage.getItem(KEY); return raw?JSON.parse(raw):defaults }catch(e){ return defaults } }
+  function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+  function id(){ if(window.crypto&&crypto.getRandomValues){ const a=new Uint32Array(2); crypto.getRandomValues(a); return a[0].toString(36)+a[1].toString(36);} return Math.random().toString(36).slice(2); }
+  let state = load();
+  // ensure order fields
+  state.habits.forEach((h,i)=>{ if(typeof h.order!=="number") h.order=i; });
+
+  // ---------- Gamification ----------
+  const XP_PER_CHECK = 10;
+  function levelFromXP(xp){ return Math.floor(xp/180)+1 } // slightly steeper
+  function addXP(amount){
+    const before=levelFromXP(state.xp);
+    state.xp+=amount;
+    const today=todayKey(); state.xpLog[today]=(state.xpLog[today]||0)+amount;
+    state.credits += Math.ceil(amount/6);
+    const after=levelFromXP(state.xp);
+    if(after>before){ showToast(`Level up! Level ${after} 🧠`); confettiBurst(260); awardBadge(`Level ${after}`); }
+    save(); renderHeader(); renderStats(); updateXPBar();
+  }
+  function awardBadge(name){ if(!state.badges.includes(name)){ state.badges.push(name); save(); renderBadges(); } }
+  function logActivity(s){ state.activity.push(`${new Date().toLocaleString()} — ${s}`); state.activity=state.activity.slice(-250); save(); renderStats(); }
+
+  // ---------- Habits ----------
+  function toggleToday(h){
+    const k=todayKey();
+    if(h.history[k]){ delete h.history[k]; showToast(`Undid: ${h.name}`); }
+    else{
+      h.history[k] = true;
+      const st = streakFor(h);
+      // Dynamic XP scales with streak (5% per day after day 1, capped 50%)
+      const scale = Math.min(1 + Math.max(0,st-1)*0.05, 1.5);
+      const reward = Math.round((h.xp||XP_PER_CHECK) * scale);
+      addXP(reward);
+      state.totalChecks++;
+      if(st%7===0) awardBadge(`${h.name}: ${st}-day streak`);
+      confettiBurst(140);
+      showToast(`+${reward} XP — ${h.name}`);
+      // perfect week badge check
+      if(isPerfectWeek()){ awardBadge('Perfect Week'); }
+    }
+    save(); renderAll();
+  }
+  function streakFor(h){ let streak=0; let key=todayKey(); while(h.history[key]){ streak++; key=dayAdd(key,-1);} return streak; }
+  function bestStreakAll(){ return Math.max(0, ...state.habits.map(streakFor)); }
+  function isPerfectWeek(){
+    // last 7 days: every day at least one habit checked
+    let cur=dayAdd(todayKey(),-6);
+    for(let i=0;i<7;i++){ const any=state.habits.some(h=>h.history[cur]); if(!any) return false; cur=dayAdd(cur,1); }
+    return true;
+  }
+
+  // Streak Freeze: spend credits to mark yesterday complete for one habit
+  el('freezeBtn').onclick=()=>{
+    if(state.credits<10) return showToast('Need 10 credits for Freeze');
+    const yesterday=dayAdd(todayKey(),-1);
+    const candidates = state.habits.filter(h=>!h.history[yesterday]);
+    if(candidates.length===0) return showToast('Nothing to freeze ✅');
+    showConfirm(`Spend 10 credits to freeze yesterday for one habit?`, ()=>{
+      state.credits-=10;
+      // choose habit with longest current streak to protect
+      candidates.sort((a,b)=>streakFor(b)-streakFor(a));
+      const h=candidates[0]; h.history[yesterday]=true; save(); renderAll(); confettiBurst(80); showToast(`🧊 Freeze used on ${h.name}`);
+    });
+  }
+
+  // ---------- Timers ----------
+  function addTask(name, minutes){
+    const idv=id(); const mins=Math.max(1,Number(minutes)||25); const ms=mins*60000;
+    state.tasks.unshift({id:idv,name,minutes:mins,status:'active',startedAt:Date.now(),elapsedMs:0,remainingMs:ms,paused:false,_last:Date.now()});
+    save(); logActivity(`🚀 Launched: ${name} (${mins}m)`); renderTimers(); renderStats();
+  }
+  function pauseTask(idv,pause=true){
+    const t=state.tasks.find(x=>x.id===idv); if(!t) return;
+    t.paused=pause; t._last=Date.now(); save(); renderTimers();
+  }
+  function stopTask(idv){
+    const t=state.tasks.find(x=>x.id===idv); if(!t) return;
+    t.status='stopped'; save(); renderTimers(); logActivity(`⏹️ Stopped: ${t.name}`);
+  }
+  function restartTask(idv){
+    const t=state.tasks.find(x=>x.id===idv); if(!t) return;
+    t.status='active'; t.elapsedMs=0; t.remainingMs=t.minutes*60000; t._last=Date.now(); t.paused=false; save(); renderTimers();
+  }
+
+  // Timer engine (throttled to 1s)
+  function tick(){
+    const now=Date.now(); let changed=false;
+    for(const t of state.tasks){
+      if(t.status==='active' && !t.paused){
+        const dt = now - (t._last||now); t._last = now;
+        t.elapsedMs += dt; t.remainingMs = Math.max(0, t.minutes*60000 - t.elapsedMs);
+        const a = document.getElementById('clk-'+t.id); if(a) a.textContent = fmtTime(t.remainingMs);
+        const b = document.getElementById('clk2-'+t.id); if(b) b.textContent = fmtTime(t.remainingMs);
+        if(t.remainingMs===0){ t.status='done'; changed=true; onTimerComplete(t); }
+      }
+    }
+    if(changed){ save(); renderTimers(); renderStats(); }
+  }
+  setInterval(tick, 1000);
+
+  function onTimerComplete(t){
+    playSound('beep');
+    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    showCompleteModal(t);
+  }
+
+  let completeTaskRef=null;
+  function showCompleteModal(t){
+    completeTaskRef=t;
+    el('completeMsg').textContent=`Finished ${t.name} (${t.minutes} min). Confirm to claim reward.`;
+    el('completeModal').style.display='flex';
+    el('markAsHabitChk').checked=false; el('habitFields').style.display='none';
+  }
+  function hideModal(){ el('completeModal').style.display='none'; }
+
+  el('markAsHabitChk').addEventListener('change',e=>{
+    el('habitFields').style.display = e.target.checked?'flex':'none';
+    if(e.target.checked && completeTaskRef){ el('habitFromTask').value = completeTaskRef.name; }
+  });
+  el('restartBtn').addEventListener('click',()=>{
+    if(!completeTaskRef) return;
+    restartTask(completeTaskRef.id); hideModal();
+  });
+  el('confirmCompleteBtn').addEventListener('click',()=>{
+    if(!completeTaskRef) return;
+    claimTaskReward(completeTaskRef); hideModal();
+  });
+
+  function claimTaskReward(t){
+    t.status='done';
+    const reward = Math.max(6, Math.round(t.minutes/3));
+    addXP(reward);
+    playSound('ding');
+    confettiBurst(220);
+    logActivity(`🏁 Mission complete: ${t.name} (+${reward} XP)`);
+    if(el('markAsHabitChk').checked){
+      const name=(el('habitFromTask').value||t.name).trim();
+      const xp=clamp(Number(el('habitFromTaskXp').value)||12,1,1000);
+      let h=state.habits.find(x=>x.name.toLowerCase()===name.toLowerCase());
+      if(!h){ h={id:id(),name,emoji:'✅',color:'#00fff0',createdAt:todayKey(),xp,goal:5,history:{},order:state.habits.length}; state.habits.push(h); }
+      h.history[todayKey()] = true;
+    }
+    save(); renderAll();
+  }
+
+  // ---------- Sound (robust) ----------
+  let audioPrimed = false;
+  let audioCtx = null;
+  function primeAudio(){
+    if(audioPrimed) return;
+    ['soundDing','soundBeep'].forEach(id=>{ const a=el(id); try{ a.pause(); a.currentTime=0; }catch{} });
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = AC ? new AC() : null;
+      if(audioCtx && audioCtx.state==='suspended'){ audioCtx.resume(); }
+    }catch{}
+    audioPrimed = true;
+  }
+  ['click','touchstart','keydown'].forEach(evt=>{ window.addEventListener(evt, primeAudio, {once:true, passive:true}); });
+
+  function playTone(freq=800, dur=180){
+    if(!audioCtx) return false;
+    try{
+      const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+      o.type='square'; o.frequency.value=freq;
+      o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime+0.01);
+      o.start();
+      setTimeout(()=>{
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.02);
+        setTimeout(()=>{ try{o.stop(); o.disconnect(); g.disconnect();}catch{} }, 40);
+      }, dur);
+      return true;
+    }catch{ return false; }
+  }
+
+  function playSound(kind){
+    if(!state.settings.sound) return;
+    const tag = (kind==='ding')? el('soundDing') : el('soundBeep');
+    if(tag){
+      try{
+        tag.pause(); tag.currentTime = 0;
+        const p = tag.play();
+        if(p && p.catch) p.catch(()=>{ playTone(kind==='ding'?880:700, 220); });
+        return;
+      }catch{}
+    }
+    playTone(kind==='ding'?880:700, 220);
+  }
+
+  // ---------- Render ----------
+  const xpTotalEl=el('xpTotal'), levelEl=el('level'), bestStreakEl=el('bestStreak'), creditsEl=el('credits'), badgesEl=el('badges');
+  const habitList=el('habitList'); const weeklyHeatmap=el('weeklyHeatmap'); const toastEl=el('toast');
+  const recentActivity=el('recentActivity');
+
+  function renderAll(){ renderHeader(); renderHabits(); renderBadges(); renderTimers(); renderStats(); renderWeeklyHeatmap(); updateTodayLabel(); updateXPBar(); }
+  function renderHeader(){ xpTotalEl.textContent=state.xp; levelEl.textContent=levelFromXP(state.xp); bestStreakEl.textContent=bestStreakAll(); creditsEl.textContent=state.credits||0; }
+
+  // Drag & drop reorder
+  function attachDnD(card, habit){
+    card.setAttribute('draggable','true');
+    card.addEventListener('dragstart', ()=>{ card.classList.add('dragging'); card.dataset.dragId = habit.id; });
+    card.addEventListener('dragend', ()=>{ card.classList.remove('dragging'); delete card.dataset.dragId; save(); });
+  }
+  habitList.addEventListener('dragover', (e)=>{
+    e.preventDefault();
+    const dragging = habitList.querySelector('.habit.dragging');
+    if(!dragging) return;
+    const after = Array.from(habitList.querySelectorAll('.habit:not(.dragging)')).find(el=>{
+      const rect = el.getBoundingClientRect(); return e.clientY < rect.top + rect.height/2;
+    });
+    if(after) habitList.insertBefore(dragging, after); else habitList.appendChild(dragging);
+    // update order numbers
+    Array.from(habitList.children).forEach((node,i)=>{
+      const id = node.getAttribute('data-id'); const h = state.habits.find(x=>x.id===id); if(h) h.order=i;
+    });
+  });
+
+  function renderHabits(){
+    habitList.innerHTML='';
+    state.habits.sort((a,b)=>a.order-b.order).forEach(h=>{
+      const card=document.createElement('div'); card.className='habit'; card.setAttribute('data-id', h.id);
+      card.style.boxShadow=`inset 0 0 24px ${h.color}22`;
+      card.style.borderColor = '#2a3a88';
+      attachDnD(card,h);
+      const top=document.createElement('div'); top.className='top';
+      const left=document.createElement('div');
+      left.innerHTML = `<div class="row"><div style="font-size:22px">${h.emoji||'✅'}</div><div class="name">${escapeHtml(h.name)}</div></div>
+                        <div class="meta">Streak: <b>${streakFor(h)}</b> · Goal ${h.goal}/7</div>`;
+      const right=document.createElement('div'); right.className='row';
+      const edit=document.createElement('button'); edit.className='btn small'; edit.setAttribute('aria-label',`Edit ${h.name}`); edit.textContent='Edit';
+      edit.onclick=()=>openEdit(h.id);
+      right.appendChild(edit);
+      top.appendChild(left); top.appendChild(right);
+
+      const check=document.createElement('input'); check.type='checkbox'; check.className='checkbox'; check.checked=!!h.history[todayKey()]; check.setAttribute('aria-label',`Mark ${h.name} today`);
+      check.onchange=()=>toggleToday(h);
+      const checkRow=document.createElement('div'); checkRow.className='row'; checkRow.style.margin='10px 0 8px';
+      const btn=document.createElement('button'); btn.className='btn positive'; btn.textContent='Mark Today'; btn.setAttribute('aria-label',`Mark today for ${h.name}`);
+      btn.onclick=()=>{ if(!h.history[todayKey()]){ check.checked=true; toggleToday(h)} else showToast('Already marked today') };
+      checkRow.appendChild(check); checkRow.appendChild(btn);
+
+      const heat=document.createElement('div'); heat.className='heat'; const days=30; let cur=dayAdd(todayKey(),-(days-1));
+      for(let i=0;i<days;i++){ const dot=document.createElement('div'); if(h.history[cur]) dot.classList.add('on'); heat.appendChild(dot); cur=dayAdd(cur,1); }
+
+      card.appendChild(top); card.appendChild(checkRow); card.appendChild(heat); habitList.appendChild(card);
+    });
+  }
+
+  // Edit modal logic
+  let editHabitId=null;
+  function openEdit(id){
+    const h=state.habits.find(x=>x.id===id); if(!h) return;
+    editHabitId=id; el('editName').value=h.name; el('editEmoji').value=h.emoji||''; el('editXP').value=h.xp||10; el('editColor').value=h.color; el('editGoal').value=h.goal||5;
+    el('editModal').style.display='flex';
+  }
+  el('cancelEditBtn').onclick=()=>{ el('editModal').style.display='none'; };
+  el('deleteHabitBtn').onclick=()=>{
+    const h=state.habits.find(x=>x.id===editHabitId); if(!h) return;
+    showConfirm(`Delete habit “${h.name}”?`, ()=>{
+      state.habits=state.habits.filter(x=>x.id!==h.id); save(); el('editModal').style.display='none'; renderAll();
+    });
+  };
+  el('saveHabitBtn').onclick=()=>{
+    const h=state.habits.find(x=>x.id===editHabitId); if(!h) return;
+    const name=(el('editName').value||'').trim(); if(!name) return showToast('Name required');
+    const emoji=el('editEmoji').value.trim(); if(emoji && !isEmoji(emoji)) return showToast('Emoji looks invalid');
+    h.name=name; h.emoji=emoji||'✅'; h.xp=clamp(Number(el('editXP').value)||10,1,1000); h.color=el('editColor').value; h.goal=clamp(Number(el('editGoal').value)||5,1,7);
+    save(); el('editModal').style.display='none'; renderAll(); showToast('Saved ✔');
+  };
+
+  function renderWeeklyHeatmap(){
+    weeklyHeatmap.innerHTML='';
+    const days=7; let cur=dayAdd(todayKey(),-(days-1));
+    for(let i=0;i<days;i++){
+      const k=cur; const any=state.habits.some(h=>h.history[k]);
+      const d=document.createElement('div'); d.className='dot'+(any?' done':''); d.title=k; d.textContent='MTWTFSS'[i];
+      weeklyHeatmap.appendChild(d); cur=dayAdd(cur,1);
+    }
+  }
+
+  function renderBadges(){
+    badgesEl.innerHTML='';
+    if(state.badges.length===0){
+      const empty=document.createElement('div'); empty.className='muted'; empty.textContent='No achievements yet — keep going!'; badgesEl.appendChild(empty); return;
+    }
+    state.badges.forEach(b=>{
+      const chip=document.createElement('div'); chip.className='pill'; chip.innerHTML=`<span>🏅</span><span>${escapeHtml(b)}</span>`;
+      badgesEl.appendChild(chip);
+    });
+    // milestones
+    if(state.totalChecks>=50) awardBadge('50 Checkmarks');
+    if(state.tasks.filter(t=>t.status==='done').length>=10) awardBadge('10 Missions');
+  }
+
+  // Timers UI
+  function renderTimers(){
+    const activeBox=el('activeTimers'); activeBox.innerHTML='';
+    const active=state.tasks.filter(t=>t.status==='active');
+    el('activeTimersEmpty').style.display = active.length? 'none':'block';
+    active.forEach(t=> activeBox.appendChild(timerItem(t, true)) );
+
+    const list=el('taskList'); list.innerHTML='';
+    const all=state.tasks;
+    el('taskListEmpty').style.display = all.length? 'none':'block';
+    all.forEach(t=>{
+      const row=document.createElement('div'); row.className='item';
+      const badge=t.status==='active'?'▶️ Active': t.status==='done'?'✅ Done':'⏹️ Stopped';
+      row.innerHTML = `
+        <div class="row"><div class="pill">${badge}</div><div><b>${escapeHtml(t.name)}</b> · ${t.minutes} min</div></div>
+        <div class="row">
+          <div class="clock" id="clk2-${t.id}">${fmtTime(t.remainingMs)}</div>
+          ${t.status==='active'
+            ? `<button class="btn small" data-pause="${t.id}">${t.paused?'Resume':'Pause'}</button><button class="btn small warn" data-stop="${t.id}">Stop</button>`
+            : `<button class="btn small" data-restart="${t.id}">Restart</button>`
+          }
+        </div>`;
+      list.appendChild(row);
+    });
+
+    // bind
+    $$('#taskList [data-pause]').forEach(b=>b.onclick=()=>{ const t=state.tasks.find(x=>x.id===b.dataset.pause); if(!t) return; const p=!t.paused; pauseTask(t.id,p); b.textContent=p?'Resume':'Pause'; });
+    $$('#taskList [data-stop]').forEach(b=>b.onclick=()=>stopTask(b.dataset.stop));
+    $$('#taskList [data-restart]').forEach(b=>b.onclick=()=>restartTask(b.dataset.restart));
+  }
+
+  function timerItem(t, showControls){
+    const div=document.createElement('div'); div.className='item';
+    div.innerHTML = `
+      <div class="row">
+        <div class="pill">⏱️ Mission</div>
+        <div><b>${escapeHtml(t.name)}</b><div class="status">${t.minutes} min session</div></div>
+      </div>
+      <div class="row">
+        <div class="clock" id="clk-${t.id}">${fmtTime(t.remainingMs)}</div>
+        ${showControls?`<button class="btn small" data-pause="${t.id}">${t.paused?'Resume':'Pause'}</button><button class="btn small warn" data-stop="${t.id}">Stop</button>`:''}
+      </div>`;
+    setTimeout(()=>{
+      const pb=div.querySelector('[data-pause]'); const sb=div.querySelector('[data-stop]');
+      if(pb){ pb.onclick=()=>{ const p=!t.paused; pauseTask(t.id,p); pb.textContent=p?'Resume':'Pause'; }; }
+      if(sb){ sb.onclick=()=>stopTask(t.id); }
+    });
+    return div;
+  }
+
+  // Stats/Activity
+  function renderStats(){
+    const ra=recentActivity; ra.innerHTML='';
+    if(state.activity.length===0){ el('recentEmpty').style.display='block'; }
+    else { el('recentEmpty').style.display='none'; }
+    state.activity.slice(-14).reverse().forEach(s=>{
+      const d=document.createElement('div'); d.className='item';
+      d.innerHTML=`<div class="row"><div class="pill">🗒️ Log</div><div>${escapeHtml(s)}</div></div>`;
+      ra.appendChild(d);
+    });
+  }
+
+  function updateXPBar(){
+    const lvl = levelFromXP(state.xp);
+    const levelBase = (lvl-1)*180;
+    const pct = ((state.xp - levelBase) / 180) * 100;
+    el('xpFill').style.width = `${Math.max(0,Math.min(100,pct))}%`;
+    el('xpLabel').textContent = `${state.xp - levelBase} / 180`;
+  }
+
+  // ---------- Confetti (with cooldown) ----------
+  const confettiCanvas=el('confetti'); const cctx=confettiCanvas.getContext('2d');
+  function resizeConfetti(){ confettiCanvas.width=innerWidth; confettiCanvas.height=innerHeight }
+  addEventListener('resize',resizeConfetti); resizeConfetti();
+  let confettiPieces=[]; let confettiActive=false; let confettiCooldown=0;
+  function rand(a,b){ return Math.random()*(b-a)+a }
+  function confettiBurst(n=160){
+    const now=Date.now(); if(now < confettiCooldown) return; confettiCooldown=now+400; // avoid spam
+    for(let i=0;i<n;i++){
+      confettiPieces.push({
+        x:innerWidth/2, y:innerHeight/3,
+        vx:rand(-4,4), vy:rand(-8,-2),
+        g:rand(0.05,0.15), size:rand(2,5), rot:rand(0,Math.PI), vr:rand(-0.2,0.2),
+        color:`hsl(${Math.floor(rand(0,360))} 100% 70%)`
+      });
+    }
+    if(!confettiActive){ confettiActive=true; requestAnimationFrame(confettiLoop) }
+  }
+  function confettiLoop(){
+    cctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    confettiPieces.forEach(p=>{
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot);
+      cctx.fillStyle=p.color; cctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      cctx.restore();
+    });
+    confettiPieces=confettiPieces.filter(p=>p.y<innerHeight+20);
+    if(confettiPieces.length>0){ requestAnimationFrame(confettiLoop) } else { confettiActive=false }
+  }
+
+  // ---------- Toast ----------
+  let toastTimer=null;
+  function showToast(msg){
+    const t=el('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), 1900);
+  }
+
+  // ---------- Events ----------
+  el('addHabitBtn').onclick=()=>{
+    const name=el('newHabitName').value.trim(); if(!name) return showToast('Name your habit first');
+    if(state.habits.some(h=>h.name.toLowerCase()===name.toLowerCase())) return showToast('Duplicate habit');
+    const emoji=el('newHabitEmoji').value.trim()||'✅'; if(emoji && !isEmoji(emoji)) return showToast('Emoji looks invalid');
+    const color=el('newHabitColor').value;
+    state.habits.push({id:id(),name,emoji,color,createdAt:todayKey(),xp:XP_PER_CHECK,goal:5,history:{},order:state.habits.length});
+    el('newHabitName').value=''; el('newHabitEmoji').value='';
+    save(); renderAll(); confettiBurst(90);
+  };
+  el('perfectDayBtn').onclick=()=>{
+    showConfirm('Mark all habits today?', ()=>{
+      const k=todayKey(); let count=0;
+      state.habits.forEach(h=>{ if(!h.history[k]){ h.history[k]=true; count++; } });
+      if(count>0){ addXP(count*XP_PER_CHECK); save(); renderAll(); showToast(`Perfect Day! +${count*XP_PER_CHECK} XP`); confettiBurst(220); }
+      else showToast('Already perfect ✨');
+    });
+  };
+
+  el('addTaskBtn').onclick=()=>{
+    const n=el('taskName').value.trim(); const m=Number(el('taskMinutes').value)||25;
+    if(!n) return showToast('Mission name required');
+    addTask(n,m); el('taskName').value='';
+  };
+
+  // Backup / Restore / Settings
+  el('backupBtn').onclick=()=>doBackupDownload();
+  function doBackupDownload(){
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='dopamine-quest-backup.json'; a.click(); URL.revokeObjectURL(url);
+    state.settings.lastBackup = todayKey(); save();
+  }
+  // Weekly auto-backup prompt
+  try{
+    const last = state.settings.lastBackup; if(!last || dayAdd(last,7) <= todayKey()){ showToast('Auto-backup downloaded'); setTimeout(doBackupDownload, 1200); }
+  }catch{}
+
+  el('restoreBtn').onclick=()=>el('restoreFile').click();
+  el('restoreFile').onchange=(ev)=>{
+    const file=ev.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        // very light schema validation
+        if(!data || !Array.isArray(data.habits) || typeof data.xp!=='number' || !data.tasks){ throw new Error('schema'); }
+        state=data; save(); renderAll(); showToast('Restored ✔'); confettiBurst(100);
+      }catch(e){ showToast('Invalid backup file'); }
+    };
+    reader.readAsText(file);
+  };
+  el('resetBtn').onclick=()=>{ showConfirm('Reset ALL data?', ()=>{ state=JSON.parse(JSON.stringify(defaults)); save(); renderAll(); }); };
+
+  el('soundToggle').onchange=(e)=>{ state.settings.sound = e.target.checked; el('soundState').textContent = state.settings.sound? 'On':'Off'; save(); };
+  el('testSoundBtn').onclick=()=>{ primeAudio(); playSound('ding'); showToast('Sound test'); };
+
+  // Notifications
+  el('notifyBtn').onclick=async()=>{
+    try{
+      const perm = await Notification.requestPermission();
+      if(perm==='granted') new Notification('Dopamine Quest', { body: 'Notifications enabled. You\'re all set!'});
+      else showToast('Notifications blocked');
+    }catch{ showToast('Notifications not supported'); }
+  };
+
+  // Generic confirm modal
+  let confirmCb=null;
+  function showConfirm(text, yes){ el('confirmText').textContent=text; el('confirmModal').style.display='flex'; confirmCb=()=>{ try{ yes&&yes(); }finally{ el('confirmModal').style.display='none'; } }; }
+  el('confirmYes').onclick=()=>{ confirmCb&&confirmCb(); };
+  el('confirmNo').onclick=()=>{ el('confirmModal').style.display='none'; };
+
+  // Today label
+  function updateTodayLabel(){
+    const d=new Date();
+    el('todayLabel').textContent = `Today: ${d.toLocaleDateString(undefined,{weekday:'short',year:'numeric',month:'short',day:'numeric'})}`;
+  }
+
+  // ---------- Init ----------
+  function render(){ renderAll(); }
+  updateTodayLabel(); render();
+
+  // ---------- PWA: manifest + service worker (single-file) ----------
+  try{
+    const manifest = {
+      name: "Dopamine Quest",
+      short_name: "DQuest",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#050812",
+      theme_color: "#00fff0",
+      icons: [
+        { src: document.querySelector('link[rel="icon"]').href, sizes: "192x192", type: "image/svg+xml" },
+        { src: document.querySelector('link[rel="icon"]').href, sizes: "512x512", type: "image/svg+xml" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
+
+    if('serviceWorker' in navigator){
+      const swCode = `self.addEventListener('install',e=>{e.waitUntil(caches.open('dq-cache-v1').then(c=>c.addAll(['./'])));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim())});self.addEventListener('fetch',e=>{const req=e.request;if(req.method!=='GET'){return;}e.respondWith(caches.match(req).then(r=>r||fetch(req).then(res=>{const copy=res.clone();caches.open('dq-cache-v1').then(c=>c.put(req,copy));return res;}).catch(()=>caches.match('./'))))});`;
+      const swUrl = URL.createObjectURL(new Blob([swCode],{type:'text/javascript'}));
+      navigator.serviceWorker.register(swUrl);
+    }
+  }catch{}
+})();
+</script>
+</body>
+</html>
